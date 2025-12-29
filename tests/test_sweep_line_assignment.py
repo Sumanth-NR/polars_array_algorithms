@@ -4,7 +4,7 @@ import polars as pl
 import pytest
 from polars.exceptions import ComputeError
 
-import polars_array_algorithms as pl_arr
+import polars_array_algorithms as pl_alg
 
 
 def test_basic_integer_sweep():
@@ -13,7 +13,7 @@ def test_basic_integer_sweep():
 
     # overlapping=False (Default): reuse at exact boundary
     res = df.with_columns(
-        room_id=pl_arr.assign_rooms("start", "end", overlapping=False)
+        room_id=pl_alg.sweep_line_assignment("start", "end", overlapping=False)
     )
     assert res["room_id"].to_list() == [1, 2, 1, 1]
 
@@ -22,7 +22,9 @@ def test_overlap_true_boundary():
     """Verify that overlapping=True prevents reuse at the exact same tick."""
     df = pl.DataFrame({"start": [1, 4], "end": [4, 8]})
 
-    res = df.with_columns(room_id=pl_arr.assign_rooms("start", "end", overlapping=True))
+    res = df.with_columns(
+        room_id=pl_alg.sweep_line_assignment("start", "end", overlapping=True)
+    )
     assert res["room_id"].to_list() == [1, 2]
 
 
@@ -43,7 +45,7 @@ def test_datetime_dispatch():
 
     # Rust sees i64 ticks; reuse happens at 11:00
     res = df.with_columns(
-        room_id=pl_arr.assign_rooms("start", "end", overlapping=False)
+        room_id=pl_alg.sweep_line_assignment("start", "end", overlapping=False)
     )
     assert res["room_id"].to_list() == [1, 1]
     assert res["room_id"].dtype == pl.UInt32
@@ -58,10 +60,8 @@ def test_date_dispatch():
         }
     )
 
-    res = df.with_columns(
-        room_id=pl_arr.assign_rooms("start", "end", overlapping=False)
-    )
-    assert res["room_id"].to_list() == [1, 2]
+    res = df.select(pl_alg.sweep_line_assignment("start", "end", overlapping=False))
+    assert res.to_series().to_list() == [1, 2]
 
 
 def test_hard_interval_case_python():
@@ -75,9 +75,9 @@ def test_hard_interval_case_python():
     ends = [9, 9, 9, 19, 35]
 
     df = pl.DataFrame({"s": starts, "e": ends})
-    res = df.select(pl_arr.assign_rooms("s", "e", overlapping=False)).to_series()
+    res = df.select(pl_alg.sweep_line_assignment("s", "e", overlapping=False))
 
-    assert res.to_list() == [1, 2, 3, 1, 4]
+    assert res.to_series().to_list() == [1, 2, 3, 1, 4]
 
 
 def test_error_on_invalid_intervals():
@@ -85,4 +85,4 @@ def test_error_on_invalid_intervals():
     df = pl.DataFrame({"s": [10], "e": [5]})
 
     with pytest.raises(ComputeError, match="End time before start time"):
-        df.select(pl_arr.assign_rooms("s", "e"))
+        df.select(pl_alg.sweep_line_assignment("s", "e"))
