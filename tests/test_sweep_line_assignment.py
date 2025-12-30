@@ -86,3 +86,60 @@ def test_error_on_invalid_intervals():
 
     with pytest.raises(ComputeError, match="End time before start time"):
         df.select(pl_alg.sweep_line_assignment("s", "e"))
+
+
+def test_apply_over_groups():
+    """Test that the algorithm works correctly when applied over groups."""
+    df = pl.DataFrame(
+        {
+            "group_key": [1, 1, 2, 2, 3],
+            "start": [1, 2, 3, 10, 5],
+            "end": [9, 9, 9, 19, 35],
+        }
+    )
+
+    res = df.with_columns(
+        room_id=pl_alg.sweep_line_assignment("start", "end").over("group_key")
+    )
+
+    assert res["room_id"].to_list() == [1, 2, 1, 1, 1]
+
+
+def test_huge_polars_native():
+    """Test that the algorithm works correctly on a large dataset."""
+    N_TOTAL = 500_000
+    N_GROUPS = 10
+    K_PEAK = 50  # Concurrency depth
+    rows_per_group = N_TOTAL // N_GROUPS
+
+    # 1. Create a base sequence [0, 1, 2, ..., rows_per_group-1]
+    # 2. Duplicate it for each group
+    # 3. Add a group_key
+    df = (
+        pl.select(group_key=pl.int_range(0, N_GROUPS, dtype=pl.UInt32))
+        .join(
+            pl.select(pl.int_range(0, rows_per_group, dtype=pl.UInt32).alias("start")),
+            how="cross",
+        )
+        .with_columns(end=pl.col("start") + K_PEAK)
+    )
+
+    # Run the plugin
+    res = df.with_columns(
+        room_id=pl_alg.sweep_line_assignment("start", "end", overlapping=False).over(
+            "group_key"
+        )
+    )
+
+    # === Validation ===
+    # Because we used a shifting block, every group's IDs MUST be 1, 2, ..., 50, 1, 2...
+    # We can validate the entire 2 million rows by checking if (index % K) + 1 == room_id
+
+    # We'll use a row_number() per group to check the mathematical pattern
+    error_rows = res.filter(pl.col("room_id") != (pl.col("start") % K_PEAK) + 1)
+
+    if error_rows.is_empty():
+        print(f"✅ PERFECT: All {N_TOTAL:_} rows match the predicted pattern.")
+    else:
+        print(f"❌ FAILED: {error_rows.height} rows do not match the pattern.")
+        print(error_rows.head())

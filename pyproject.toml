@@ -4,6 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "polars-array-algorithms"
+description = "Rust-accelerated array algorithms for Polars DataFrames."
+readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Rust",
@@ -11,6 +13,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/Sumanth-NR/polars_array_algorithms"
 
 [tool.maturin]
 module-name = "polars_array_algorithms._internal"
