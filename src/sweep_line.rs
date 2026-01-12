@@ -103,15 +103,15 @@ pub fn sweep_line_assignment(inputs: &[Series], kwargs: SweepLineKwargs) -> Pola
     let s_start = inputs[0].rechunk();
     let s_end = inputs[1].rechunk();
 
+    if s_start.dtype() != s_end.dtype() {
+        return Err(PolarsError::ComputeError(
+            "Types of input sequences must be the same".into(),
+        ));
+    }
+
     // Convert to physical representation (handles Date/Datetime)
     let p_start = s_start.to_physical_repr();
     let p_end = s_end.to_physical_repr();
-
-    if p_start.dtype() != p_end.dtype() {
-        return Err(PolarsError::ComputeError(
-            "Physical dtypes must match".into(),
-        ));
-    }
 
     // Dispatch to generic implementation based on physical type
     let res = match p_start.dtype() {
