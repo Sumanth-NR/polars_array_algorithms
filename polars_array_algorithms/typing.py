@@ -1,6 +1,6 @@
 """Type definitions for polars_array_algorithms."""
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import sys
@@ -13,5 +13,5 @@ if TYPE_CHECKING:
         from typing_extensions import TypeAlias
     from polars.datatypes import DataType, DataTypeClass
 
-    IntoExprColumn: TypeAlias = Union[pl.Expr, str, pl.Series]
-    PolarsDataType: TypeAlias = Union[DataType, DataTypeClass]
+    IntoExprColumn: TypeAlias = pl.Expr | str | pl.Series
+    PolarsDataType: TypeAlias = DataType | DataTypeClass

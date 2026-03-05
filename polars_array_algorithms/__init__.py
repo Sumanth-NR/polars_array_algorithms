@@ -74,9 +74,9 @@ def sweep_line_assignment(
     Always produces optimal (minimum) number of resources.
     """
     return register_plugin_function(
-        args=[start, end],
         plugin_path=LIB,
         function_name="sweep_line_assignment",
+        args=[start, end],
         kwargs={"overlapping": overlapping},
         is_elementwise=False,
     )
