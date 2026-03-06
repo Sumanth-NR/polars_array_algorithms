@@ -98,9 +98,18 @@ make install
 ```
 
 ### Testing
+
+#### Python
 ```bash
 make test
 ```
+
+#### Rust
+```bash
+cargo test --no-default-features
+```
+_Note: these are the pure rust unit tests which do not require python bindings._
+
 
 ### Code Quality
 ```bash
