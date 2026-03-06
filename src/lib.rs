@@ -5,6 +5,7 @@
 use pyo3::prelude::*;
 use pyo3_polars::PolarsAllocator;
 
+mod lis;
 mod sweep_line;
 
 /// PyO3 module definition exposing Rust functions to Python.

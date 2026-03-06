@@ -20,3 +20,6 @@ pre-commit:
 
 test:
 	.venv/bin/python -m pytest tests
+
+rust-test:
+	cargo test --no-default-features
